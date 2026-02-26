@@ -190,3 +190,43 @@ const kd = kdPkg?.default ?? kdPkg;
 - OpenAPI 文档：`references/openapi/docs/`
 - 抓取报告（可选）：`references/openapi/report.json`
 - 可复用 runtime 资产：`assets/runtime/`
+
+## 官方 OpenAPI 规范要点（必须遵守）
+
+> 来源：金蝶官方《苍穹平台 OpenAPI 接口规范》《苍穹平台 OpenAPI 开发规范》。
+> 注意：星辰/苍穹在具体 path 上可能不同，但**方法、header、返回结构、幂等/限流/数据量约束**对“写脚本做集成”具备通用指导意义；最终仍以 `manifest → docs` 为准。
+
+### 协议、报文与 URL
+- 传输协议推荐 **HTTPS**；OpenAPI 支持 HTTPS/HTTP，通过 GET/POST 交互，常见报文为 JSON（也可能是 XML/文件流，以 docs 为准）。:contentReference[oaicite:0]{index=0} :contentReference[oaicite:1]{index=1}
+- 报文大小限制（苍穹 V6.0.14+）：请求/响应 body 最大 **20M**，文件流最大 **50M**；可由租户 MC 参数调整：`OpenApi.MaxBodySize`、`OpenApi.FileItem.MaxSize`。:contentReference[oaicite:2]{index=2}
+- URL 构造：平台常提供 **URI**，需要拼接域名与 `/kapi` 形成完整地址（示例：`https://<host>/kapi/v2/...`）。 :contentReference[oaicite:3]{index=3} :contentReference[oaicite:4]{index=4}  
+  - 苍穹 V2 URL 结构参考：`kapi/v2/{isv}/{appId}/{formId}/{API编码}`（自定义 API 可能没有 `formId` 段）。:contentReference[oaicite:5]{index=5}  
+  - **禁止猜 URL**：仍然必须按本 skill 的硬规则：`manifest → docs` 抽取 `method/url`。
+
+### GET/POST 使用边界（生成代码必须体现）
+- GET 仅用于获取数据；参数暴露在 URL，且长度有约束（文档提到 2048 字符）。POST 用于保存/修改等写入，参数放在 request body。:contentReference[oaicite:6]{index=6}
+
+### 公共 Header 与幂等（写入/状态动作强制考虑）
+- 公共 header 概念：`Content-Type`（如 `application/json`）、`accesstoken`（鉴权令牌）。:contentReference[oaicite:7]{index=7}
+- 写入/状态动作建议使用 `Idempotency-Key` 防重复提交；检测到重复 key 系统会拒绝请求。接口规范提到 key 有效期 30 分钟。:contentReference[oaicite:8]{index=8}  
+  - 开发规范还补充：`Idempotency-Key` 可由 uuid/业务单号生成，并支持 `Idempotency-Timeout`（V6.0.12+）。:contentReference[oaicite:9]{index=9}  
+- 高并发/强一致场景，规范更推荐“业务侧数据库唯一索引”从源头避免重复写入。:contentReference[oaicite:10]{index=10}
+
+### 通用返回结构（成功判定不能只看 HTTP 200）
+- 通用返回字段：`data`、`errorCode`、`message`、`status`。:contentReference[oaicite:11]{index=11}
+- 规范调用成功判定：HTTP=200 且 `errorCode==0`（或 docs 指定的成功标识）。:contentReference[oaicite:12]{index=12}
+- 分页返回常见字段（位于 `data`）：`rows`、`pageNo`、`pageSize`、`filter`、`lastPage`、`totalCount`。:contentReference[oaicite:13]{index=13}
+
+### 错误码与重试分类（生成代码应内置）
+- 常见错误码：400/401/403/404/405/415/429/500/601/602/603/604/611 等；其中 415 通常是 Content-Type 不正确，429 表示限流。:contentReference[oaicite:14]{index=14} :contentReference[oaicite:15]{index=15}
+- 推荐重试：仅对网络/超时、429（指数退避）、部分 500/999 做小次数重试；400/401/403/404/405/415/601/603/604 不应盲目重试。
+
+### 性能、数据量与限流（写同步脚本必须兜底）
+- 服务端建议单次调用最长响应不超过 **50 秒**；大数据量必须分页：单次查询（含分录）不超过 **1 万条**，保存不超过 **2000 条**。:contentReference[oaicite:16]{index=16}
+- 公有云频控示例：每租户账套 accountId **600 次/分**，每第三方应用客户端 **30 次/秒**。:contentReference[oaicite:17]{index=17}
+
+### 安全（调用侧必须遵守）
+- accessToken 默认 2 小时有效；客户端应缓存 token，避免每次调用都去获取；文档提示“每小时重新获取 token 的次数不应超过 100 次”。:contentReference[oaicite:18]{index=18}
+- token 推荐放在请求头；可配 IP 黑白名单与签名/加密/脱敏策略（按平台能力）。:contentReference[oaicite:19]{index=19} :contentReference[oaicite:20]{index=20}
+
+（可选扩展）当你需要开发/配置自定义 OpenAPI：发布后需向下兼容、出入参不可随意变更、校验逻辑写在操作插件、并配套单元测试。:contentReference[oaicite:21]{index=21}

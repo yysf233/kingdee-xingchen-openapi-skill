@@ -1,5 +1,7 @@
 const { buildUrl } = require("../core/url.cjs");
 const { safeLog } = require("../core/assert.cjs");
+const { buildHeaders, maskSensitiveHeadersForLog } = require("../core/headers.cjs");
+const { withRetry } = require("../core/retry.cjs");
 
 const ENDPOINTS = {
   list: {
@@ -75,6 +77,11 @@ function hasVisibleData(resp) {
   return true;
 }
 
+function isWriteOrWorkflow(op) {
+  const text = String(op || "");
+  return text.startsWith("write:") || text.startsWith("workflow:");
+}
+
 module.exports = function createObject2680caApi({ client, openapiHost = process.env.OPENAPI_HOST || "https://api.kingdee.com", overrideHost = false } = {}) {
   if (typeof client !== "function") {
     throw new Error("client(req) function is required");
@@ -95,7 +102,19 @@ module.exports = function createObject2680caApi({ client, openapiHost = process.
     if (!meta) throw new Error(`Endpoint for action ${name} is not configured`);
     const method = String(meta.method || "POST").toUpperCase();
     const finalUrl = getRequestUrl(name, opts);
-    safeLog("[REQ]", { action: name, method, url: finalUrl });
+    const isWrite = isWriteOrWorkflow(meta.op);
+    const isBodyMethod = method === "POST" || method === "PUT" || method === "PATCH";
+    const headers = buildHeaders({
+      defaultHeaders: {},
+      extraHeaders: opts.headers || {},
+      isWrite,
+      isBodyMethod,
+      idempotencyKey: opts.idempotencyKey,
+      idempotencyTimeoutSec: opts.idempotencyTimeoutSec,
+      payload: payload || {},
+      enableIdempotency: opts.enableIdempotency !== false,
+    });
+    safeLog("[REQ]", { action: name, method, url: finalUrl, headers: maskSensitiveHeadersForLog(headers) });
     const req = { method, url: finalUrl };
     if (method === "GET") {
       req.params = payload || {};
@@ -103,6 +122,22 @@ module.exports = function createObject2680caApi({ client, openapiHost = process.
     } else {
       req.params = opts.params || {};
       req.data = payload || {};
+    }
+    req.headers = headers;
+
+    if (isWrite) {
+      const retryOptions = opts.retry || {};
+      const retryLogger =
+        typeof opts.logger === "function"
+          ? opts.logger
+          : (info) => safeLog("[RETRY]", { action: name, ...info });
+      return withRetry(() => client(req), {
+        maxRetries: retryOptions.maxRetries,
+        baseDelayMs: retryOptions.baseDelayMs,
+        logger: retryLogger,
+        sleep: retryOptions.sleep,
+        jitterFn: retryOptions.jitterFn,
+      });
     }
     return client(req);
   }
