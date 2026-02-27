@@ -1,4 +1,4 @@
-# kingdee-xingchen-openapi-js
+# kingdee-xingchen-openapi-skill
 
 面向 **金蝶云·星辰 OpenAPI** 的“可执行 skill 仓库”。它把 OpenAPI 的端点目录（`api.manifest.jsonl`）与文档（`docs/*.md`）纳入统一资产，并提供一套工具链：
 
@@ -9,9 +9,12 @@
 
 > 适用：ERP 二开/系统集成、主数据同步、订单链路打通、WMS/电商/CRM 与星辰对接可行性验证与工程化落地。
 
+管理汇报文档：[`OPENAPI_TEST_REPORT_2026-02-27.md`](./OPENAPI_TEST_REPORT_2026-02-27.md)
+
 ---
 
 ## 目录结构
+
 - `SKILL.md`  
   规范与硬规则（**必须按 manifest → docs 选端点**、**URL 必须完整**、**写后读验证**等）。
 
@@ -58,6 +61,7 @@
 ```
 
 资源对象通常包含：
+
 - `list/detail/save/create/update/delete/...`
 - `workflow` 动作（存在则生成）
 - `getRequestUrl(actionName, opts?)`：打印/检查完整 URL（便于排错）
@@ -91,21 +95,26 @@ node --test
 ## 使用指南（接入方式二选一）
 
 ### 方式 A：作为工程子模块（推荐）
+
 1. 把本仓库作为子模块放到工程里。
 2. 在工程根目录安装依赖：
+
 ```bash
 npm i kingdee-sdk dotenv
 ```
 
 ### 方式 B：作为全局 skill
-1. 把本项目 `git clone` 到全局 skills 目录（例如 `~/.agents/skills/kingdee-xingchen-openapi-js`）。
+
+1. 把本项目 `git clone` 到全局 skills 目录（例如 `~/.agents/skills/kingdee-xingchen-openapi-skill`）。
 2. 在需要的对话里使用 `/skills` 命令（或等效命令）启用本 skill。
 3. 在实际运行 `kdClient.cjs` / sample 的工程目录安装依赖：
+
 ```bash
 npm i kingdee-sdk dotenv
 ```
 
 `assets/runtime/kdClient.cjs` 至少需要环境变量（项目根目录创建 `.env` 文件，在其中填写以下金蝶云星辰官方用于鉴权的字段值）：
+
 - `CLIENT_ID`
 - `CLIENT_SECRET`
 - `APP_KEY`

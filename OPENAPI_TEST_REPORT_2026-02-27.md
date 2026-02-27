@@ -1,0 +1,123 @@
+# 金蝶云星辰 OpenAPI 测试与考察报告（阶段结项）
+
+- 报告日期：2026-02-27
+- 报告人：`<请填写>`
+- 面向对象：项目负责人/部门领导
+- 配套交付：本仓库 `kingdee-xingchen-openapi-skill`（随报告一并提交）
+
+---
+
+## 1. 背景与目标
+
+根据“验证金蝶云星辰 OpenAPI 可用性与工程落地方式”的工作要求，本阶段目标是：
+
+1. 形成可复用的 OpenAPI 资料库（目录 + 文档）。
+2. 建立可执行的 API 调用骨架生成能力（便于后续项目快速接入）。
+3. 固化稳定的排错与验证机制（含写后读验证、URL/域名/鉴权排查）。
+4. 输出可交付资产，证明该项技术准备工作已完成。
+
+---
+
+## 2. 测试范围与方法
+
+本次为“技术可行性 + 工程化能力建设”测试，包含以下范围：
+
+1. 资料侧：`manifest + docs` 发现、整理、引用。
+2. 工具侧：端点语义标签化与 SDK 骨架生成。
+3. 运行侧：`kingdee-sdk` 封装调用链、鉴权环境变量、统一 `client(req)` 形态。
+4. 质量侧：单元测试与关键策略验证（幂等、重试、脱敏、写后读）。
+
+执行方式：
+
+1. 基于仓库内置脚本执行自动化处理（`node tools/tag_endpoints.cjs`、`node tools/gen_sdk.cjs`）。
+2. 执行单元测试（`node --test`）。
+3. 对产物目录和统计结果进行核验并留存。
+
+---
+
+## 3. 关键量化结果
+
+截至 2026-02-27，本阶段结果如下：
+
+| 项目                                         | 结果                 |
+| -------------------------------------------- | -------------------- |
+| OpenAPI 目录条目（`api.manifest.jsonl`）     | 382                  |
+| OpenAPI 文档数（`references/openapi/docs/`） | 382                  |
+| 标签化处理端点数                             | 382                  |
+| 识别业务对象数                               | 119                  |
+| 覆盖模块数                                   | 121                  |
+| 未映射对象组（保留 fallback key）            | 114                  |
+| 生成 SDK 资源对象文件数                      | 119                  |
+| 生成示例脚本数（`generated/scripts/`）       | 119                  |
+| 单元测试结果                                 | 10/10 通过（0 失败） |
+
+补充说明：
+
+1. 端点方法分布：GET 248、POST 128、method 为空 5（文档/示例型条目）。
+2. URL 形态：382 条均可提取为完整 URL（避免 `Invalid URL` 类问题）。
+
+---
+
+## 4. 已完成能力与结论
+
+### 4.1 已完成能力
+
+1. 完成 OpenAPI 资料资产化：`references/openapi/` 可作为统一参考源。
+2. 完成端点语义标签化：形成 `op/entityType/sync/id/objectKey` 结构化数据。
+3. 完成 SDK 骨架生成：输出可运行 JS 调用代码与样例脚本。
+4. 完成运行时封装：基于 `kingdee-sdk` 的统一调用入口与鉴权处理。
+5. 完成稳定性策略内置：写后读验证、默认报文头、幂等键、429 重试、日志脱敏。
+6. 完成最小质量门禁：单测通过，关键路径可重复执行。
+
+### 4.2 结论
+
+本阶段“金蝶云星辰 OpenAPI 技术考察与工程化准备”已达到结项条件，可支持后续业务接口的批量接入开发。  
+换言之：技术路线可行、工具链可复用、交付资产可落地。
+
+---
+
+## 5. 交付清单（提交领导）
+
+1. 技术报告：`OPENAPI_TEST_REPORT_2026-02-27.md`（本文件）。
+2. 项目说明：`README.md`（定位、结构、命令、接入方式）。
+3. 技能规范：`SKILL.md`（端点选型、写后读、排错流程等硬规则）。
+4. OpenAPI 资料库：`references/openapi/`（manifest + docs + report）。
+5. 标签工具：`tools/tag_endpoints.cjs`。
+6. 生成工具：`tools/gen_sdk.cjs`。
+7. 运行时封装：`assets/runtime/kdClient.cjs`。
+8. 生成产物：`generated/sdk/` 与 `generated/scripts/`。
+
+---
+
+## 6. 风险与边界说明
+
+1. 当前仍有 114 个对象组未在 `object.map.json` 完整命名，虽不影响生成与调用，但建议逐步补齐以提升可读性。
+2. 少量条目 method 为空（多为指导文档/规范说明类），不属于标准业务读写接口。
+3. 本阶段重点是“可行性与工程能力建设”，若进入生产集成阶段，仍需按目标业务做联调与压测。
+
+---
+
+## 7. 下一阶段建议（可选）
+
+1. 按业务优先级（如客户、物料、订单、库存）补齐 `object.map.json` 命名。
+2. 选择 3-5 条核心业务链路开展联调，形成“接口清单 + 字段映射 + 错误码处理”落地文档。
+3. 将本 skill 以子模块方式并入正式项目，作为后续 OpenAPI 开发标准底座。
+
+---
+
+## 8. 执行记录（摘要）
+
+```bash
+node tools/tag_endpoints.cjs
+# [OK] tagged 382 endpoints
+# [OK] wrote references/openapi/_derived/endpoints.tagged.json
+# [OK] wrote references/openapi/_derived/tag.summary.json
+
+node tools/gen_sdk.cjs
+# [OK] generated SDK for 119 objects
+
+node --test
+# tests 10
+# pass 10
+# fail 0
+```
