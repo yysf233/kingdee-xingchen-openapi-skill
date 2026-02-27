@@ -439,6 +439,21 @@ function hasAnyHint(texts, hints) {
   return hints.some((hint) => whole.includes(String(hint).toLowerCase()));
 }
 
+function safeBasename(filePath) {
+  const normalized = normalizeString(filePath).replace(/[\\/]+$/, "");
+  if (!normalized) return null;
+  return path.basename(normalized);
+}
+
+function sanitizeSourceInfo(sourceInfo) {
+  const src = sourceInfo && typeof sourceInfo === "object" ? sourceInfo : {};
+  return {
+    source: normalizeString(src.source) || "unknown",
+    manifestFile: safeBasename(src.manifestPath),
+    docsDirName: safeBasename(src.docsDir),
+  };
+}
+
 function buildSummary(taggedEndpoints, sourceInfo, missingObjectMap) {
   const byModule = new Map();
   const byObject = new Map();
@@ -502,7 +517,7 @@ function buildSummary(taggedEndpoints, sourceInfo, missingObjectMap) {
 
   return {
     generatedAt: new Date().toISOString(),
-    source: sourceInfo,
+    source: sanitizeSourceInfo(sourceInfo),
     counts: {
       endpoints: taggedEndpoints.length,
       objects: objects.length,

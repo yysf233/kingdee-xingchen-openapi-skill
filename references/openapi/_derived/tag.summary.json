@@ -1,9 +1,9 @@
 {
   "generatedAt": "2026-02-26T08:25:52.105Z",
   "source": {
-    "manifestPath": "C:\\Users\\20493\\.agents\\skills\\kingdee-xingchen-openapi-js\\references\\openapi\\api.manifest.jsonl",
-    "docsDir": "C:\\Users\\20493\\.agents\\skills\\kingdee-xingchen-openapi-js\\references\\openapi\\docs",
-    "source": "skill"
+    "source": "skill",
+    "manifestFile": "api.manifest.jsonl",
+    "docsDirName": "docs"
   },
   "counts": {
     "endpoints": 382,

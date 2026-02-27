@@ -71,3 +71,28 @@ test("fallback objectKey remains stable when mapping misses", () => {
   assert.equal(key1, key2);
   assert.match(key1, /^object[A-Za-z0-9]+$/);
 });
+
+test("summary source info should be sanitized without absolute paths", () => {
+  const objectMap = createDefaultObjectMap();
+  const { summary } = buildTaggedEndpoints(
+    [{ title: "客户列表", method: "GET", path: "/jdy/v2/bd/customer_list", group: "客户", module: ["基础资料"] }],
+    {
+      objectMap,
+      docsDir: null,
+      sourceInfo: {
+        source: "skill",
+        manifestPath: "C:\\Users\\someone\\repo\\references\\openapi\\api.manifest.jsonl",
+        docsDir: "C:\\Users\\someone\\repo\\references\\openapi\\docs",
+      },
+    }
+  );
+
+  assert.deepEqual(summary.source, {
+    source: "skill",
+    manifestFile: "api.manifest.jsonl",
+    docsDirName: "docs",
+  });
+  const sourceJson = JSON.stringify(summary.source);
+  assert.equal(sourceJson.includes("C:\\\\"), false);
+  assert.equal(sourceJson.includes("Users"), false);
+});
